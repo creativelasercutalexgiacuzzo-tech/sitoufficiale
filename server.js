@@ -13,6 +13,19 @@ const fs = require("fs");
 const path = require("path");
 
 const PORT = process.env.PORT || 3000;
+
+// Rende tolleranti i nomi delle variabili: spazi, minuscole, trattini e alcuni nomi alternativi.
+const ALIASES = {
+  BREVO_API_KEY: ["BREVO_API_KEY", "BREVO_KEY", "BREVO_API", "BREVOAPIKEY", "API_KEY_BREVO", "SENDINBLUE_API_KEY", "API_KEY"],
+  CONTACT_TO_EMAIL: ["CONTACT_TO_EMAIL", "CONTACT_EMAIL", "TO_EMAIL", "EMAIL_TO"],
+  SENDER_EMAIL: ["SENDER_EMAIL", "FROM_EMAIL", "EMAIL_FROM", "SENDER"],
+};
+const norm = (k) => String(k).trim().toUpperCase().replace(/[\s-]+/g, "_");
+for (const [canon, names] of Object.entries(ALIASES)) {
+  if (process.env[canon] && process.env[canon].trim()) { process.env[canon] = process.env[canon].trim(); continue; }
+  const found = Object.keys(process.env).find((k) => names.includes(norm(k)) && String(process.env[k]).trim());
+  if (found) process.env[canon] = String(process.env[found]).trim().replace(/^["']|["']$/g, "");
+}
 const PUBLIC_DIR = path.join(__dirname, "public");
 
 const MIME = {
@@ -165,7 +178,12 @@ async function handleStatus(req, res) {
     CONTACT_TO_EMAIL: Boolean(process.env.CONTACT_TO_EMAIL),
     SENDER_EMAIL: Boolean(process.env.SENDER_EMAIL),
     brevo: "non verificato",
+    // solo i NOMI delle variabili collegate al modulo, per controllare errori di battitura
+    variabili_trovate: Object.keys(process.env).filter((k) => /brevo|mail|sender|sendinblue|api/i.test(k)).map((k) => JSON.stringify(k)),
   };
+  if (process.env.BREVO_API_KEY && !process.env.BREVO_API_KEY.startsWith("xkeysib-")) {
+    body.avviso = process.env.BREVO_API_KEY.startsWith("xsmtpsib-") ? "Hai inserito la chiave SMTP: serve la chiave API (inizia con xkeysib-)" : "La chiave non inizia con xkeysib-: controlla di aver copiato la chiave API di Brevo";
+  }
   if (body.BREVO_API_KEY) {
     try {
       const r = await fetch("https://api.brevo.com/v3/account", { headers: { "api-key": process.env.BREVO_API_KEY, Accept: "application/json" } });
