@@ -1,0 +1,13 @@
+{
+  "name": "sito-vetrina",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sito vetrina con modulo contatti collegato a Brevo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
