@@ -151,9 +151,43 @@ async function handleContact(req, res) {
 
     return json(res, 200, { ok: true });
   } catch (e) {
-    console.error(e.message);
+    console.error("Invio Brevo fallito:", e.message);
     return json(res, 502, { ok: false, error: "Invio non riuscito. Riprova o contattaci per telefono." });
   }
+}
+
+// Pagina di controllo: dice SOLO se le variabili ci sono e se Brevo accetta la chiave (mai i valori).
+let lastStatus = { at: 0, body: null };
+async function handleStatus(req, res) {
+  if (Date.now() - lastStatus.at < 60000 && lastStatus.body) return json(res, 200, lastStatus.body);
+  const body = {
+    BREVO_API_KEY: Boolean(process.env.BREVO_API_KEY),
+    CONTACT_TO_EMAIL: Boolean(process.env.CONTACT_TO_EMAIL),
+    SENDER_EMAIL: Boolean(process.env.SENDER_EMAIL),
+    brevo: "non verificato",
+  };
+  if (body.BREVO_API_KEY) {
+    try {
+      const r = await fetch("https://api.brevo.com/v3/account", { headers: { "api-key": process.env.BREVO_API_KEY, Accept: "application/json" } });
+      const t = await r.text();
+      if (r.ok) body.brevo = "chiave valida";
+      else if (/ip/i.test(t) && r.status === 401) body.brevo = "BLOCCATO: Brevo non riconosce l'indirizzo IP di Render (disattiva il blocco IP in Brevo > Security > Authorised IPs)";
+      else if (r.status === 401) body.brevo = "chiave API non valida o disattivata";
+      else body.brevo = `errore Brevo ${r.status}`;
+    } catch (e) {
+      body.brevo = "Brevo non raggiungibile";
+    }
+    try {
+      const r = await fetch("https://api.brevo.com/v3/senders", { headers: { "api-key": process.env.BREVO_API_KEY, Accept: "application/json" } });
+      if (r.ok && process.env.SENDER_EMAIL) {
+        const data = await r.json();
+        const s = (data.senders || []).find((x) => String(x.email).toLowerCase() === process.env.SENDER_EMAIL.toLowerCase());
+        body.mittente = !s ? "SENDER_EMAIL non presente tra i mittenti Brevo" : s.active ? "mittente verificato" : "mittente presente ma NON verificato (conferma l'email ricevuta da Brevo)";
+      }
+    } catch (e) { /* facoltativo */ }
+  }
+  lastStatus = { at: Date.now(), body };
+  return json(res, 200, body);
 }
 
 function serveStatic(req, res) {
@@ -180,6 +214,7 @@ http
   .createServer((req, res) => {
     if (req.url === "/api/contatto" && req.method === "POST") return handleContact(req, res);
     if (req.url === "/healthz") return json(res, 200, { ok: true });
+    if (req.url === "/api/stato") return handleStatus(req, res);
     if (req.method !== "GET" && req.method !== "HEAD") {
       res.writeHead(405);
       return res.end();

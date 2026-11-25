@@ -77,6 +77,12 @@ git push -u origin main
 > **Nota sul piano gratuito di Render:** il servizio si "addormenta" dopo 15 minuti senza visite e la prima apertura
 > successiva può impiegare 30-50 secondi. Per un'attività conviene il piano *Starter* (sempre attivo).
 
+## Se il modulo non funziona
+
+Apri `https://TUO-SITO.onrender.com/api/stato`. La pagina dice se le tre variabili sono impostate,
+se Brevo accetta la chiave e se il mittente è verificato. Non mostra mai i valori.
+I dettagli dell'errore sono in Render → servizio → **Logs**.
+
 ## Come funziona il form
 
 Il browser invia i dati a `/api/contatto` → il server li controlla (campi obbligatori, consenso privacy,
@@ -88,5 +94,4 @@ con **Rispondi** già impostato sull'indirizzo del cliente. La chiave API resta 
 - [ ] Dati in `config.js` e logo
 - [ ] Titolo e descrizione in `index.html`
 - [ ] P.IVA nel footer (`piva` in `config.js`), se l'attività ne ha una
-- [ ] Completare `privacy.html` (parti evidenziate) e farla verificare
 - [ ] Controllare i testi delle FAQ e della sezione "Su misura" con Alex
