@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: sito-vetrina
+    name: creative-laser-cut-AG
     runtime: node
     plan: free
     buildCommand: npm install
