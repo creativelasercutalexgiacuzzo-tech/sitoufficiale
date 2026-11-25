@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: creative-laser-cut-AG
+    name: creative-laser-cut-ag
     runtime: node
     plan: free
     buildCommand: npm install
